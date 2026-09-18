@@ -29,8 +29,7 @@ const platforms = [
   { x: 460, y: -1560, w: 140, h: 16 }, { x: 205, y: -1680, w: 155, h: 16 }, { x: 500, y: -1800, w: 200, h: 16 }
 ];
 const obstacles = [
-  { x: 245, y: 449, w: 54, h: 16, type: "spikes" },
-  { x: 65, y: 36, w: 58, h: 16, type: "spikes" },
+  { x: 175, y: 450, w: 54, h: 16, type: "spikes" },
   { x: 386, y: 284, w: 46, h: 16, type: "spikes" },
   { x: 195, y: 202, w: 64, h: 16, type: "spikes" },
   { x: 520, y: 119, w: 46, h: 16, type: "spikes" },
@@ -38,7 +37,7 @@ const obstacles = [
   { x: 370, y: 335, w: 150, h: 12, type: "barrier" },
   { x: 190, y: -185, w: 150, h: 12, type: "barrier" },
   { x: 470, y: -485, w: 130, h: 12, type: "barrier" },
-  { x: 380, y: -1240, w: 140, h: 12, type: "barrier" }
+  // { x: 380, y: -1240, w: 140, h: 12, type: "barrier" }
 ];
 
 bestValue.textContent = String(best).padStart(4, "0");

@@ -1,8 +1,11 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("node:path");
+const fs = require("fs");
+
+let window;
 
 function createWindow() {
-  const window = new BrowserWindow({
+  window = new BrowserWindow({
     width: 1280,
     height: 820,
     minWidth: 900,
@@ -12,6 +15,13 @@ function createWindow() {
     webPreferences: { contextIsolation: true, sandbox: true }
   });
   window.loadFile(path.join(__dirname, "index.html"));
+  
+  // Hot reload on file changes
+  fs.watch(__dirname, { recursive: true }, (eventType, filename) => {
+    if (filename && (filename.endsWith(".js") || filename.endsWith(".css") || filename.endsWith(".html"))) {
+      window?.reload();
+    }
+  });
 }
 
 app.whenReady().then(() => {
