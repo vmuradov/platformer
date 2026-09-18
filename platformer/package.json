@@ -1,0 +1,20 @@
+{
+  "name": "skybound",
+  "version": "0.1.0",
+  "description": "A momentum-based vertical platformer.",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^38.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.skybound.game",
+    "productName": "Skybound",
+    "files": ["index.html", "styles.css", "game.js", "main.cjs"],
+    "win": { "target": "nsis" }
+  }
+}

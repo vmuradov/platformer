@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skybound | Vertical platformer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">↗</span><span>SKYBOUND</span></div>
+      <div class="status"><span class="status-dot"></span>RUN 001 <span class="slash">/</span> THE CLOUDLINE</div>
+      <button class="reset-button" id="resetButton" type="button" title="Restart run">↻ <span>restart</span></button>
+    </header>
+
+    <section class="game-wrap">
+      <div class="game-frame">
+        <canvas id="game" width="960" height="600" aria-label="Skybound platforming game"></canvas>
+        <div class="hud">
+          <div class="height-readout"><span class="hud-label">ALTITUDE</span><strong id="heightValue">0000</strong><span class="unit">m</span></div>
+          <div class="best-readout"><span class="hud-label">BEST</span><strong id="bestValue">0000</strong><span class="unit">m</span></div>
+        </div>
+        <div class="center-message" id="centerMessage">
+          <span class="eyebrow">THE CLOUDLINE // 01</span>
+          <h1>Keep going up.</h1>
+          <p>Every landing is a new beginning.</p>
+          <button class="start-button" id="startButton" type="button">ENTER THE CLIMB <span>↗</span></button>
+        </div>
+        <div class="complete-message hidden" id="completeMessage">
+          <span class="eyebrow">SUMMIT REACHED</span>
+          <h2>You found the edge.</h2>
+          <p id="completeCopy">The sky is wider from up here.</p>
+          <button class="start-button" id="againButton" type="button">CLIMB AGAIN <span>↗</span></button>
+        </div>
+      </div>
+      <aside class="side-panel">
+        <div class="panel-section">
+          <span class="panel-kicker">FLIGHT MANUAL</span>
+          <div class="control-row"><kbd>A</kbd><kbd>D</kbd><span>steer</span></div>
+          <div class="control-row"><kbd>W</kbd><kbd>SPACE</kbd><span>jump</span></div>
+          <div class="control-row"><kbd>S</kbd><span>brake</span></div>
+        </div>
+        <div class="panel-section panel-note">
+          <span class="panel-kicker">FIELD NOTE 01</span>
+          <p>Momentum is everything. Landings charge your next leap. The higher you climb, the less room you get.</p>
+        </div>
+        <div class="panel-footer">ESC <span>pause</span><span class="footer-divider"></span> SPACE <span>continue</span></div>
+      </aside>
+    </section>
+    <footer class="bottomline"><span>AN ORIGINAL VERTICAL PLATFORMER</span><span>BUILD 0.1.0</span></footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
