@@ -1,55 +1,185 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const heightValue = document.getElementById("heightValue");
-const bestValue = document.getElementById("bestValue");
-const centerMessage = document.getElementById("centerMessage");
-const centerTitle = centerMessage.querySelector("h1");
-const centerSubtitle = centerMessage.querySelector("p");
-const completeMessage = document.getElementById("completeMessage");
-const completeCopy = document.getElementById("completeCopy");
+if (window.skyboundHotReload) window.skyboundHotReload();
+var hotReloadState = window.skyboundState;
+var hotReloadController = new AbortController();
+var animationFrameId;
 
-const W = 960;
-const H = 600;
-const world = { width: 960, height: 5000 };
-const keys = {};
-let state = "ready";
-let cameraY = 0;
-let cameraTargetY = 0;
-let best = Number(localStorage.getItem("skybound-best") || 0);
+var canvas = document.getElementById("game");
+var ctx = canvas.getContext("2d");
+var heightValue = document.getElementById("heightValue");
+var bestValue = document.getElementById("bestValue");
+var centerMessage = document.getElementById("centerMessage");
+var centerTitle = centerMessage.querySelector("h1");
+var centerSubtitle = centerMessage.querySelector("p");
+var completeMessage = document.getElementById("completeMessage");
+var completeCopy = document.getElementById("completeCopy");
+var playerNameInput = document.getElementById("playerName");
+var startNameInput = document.getElementById("startName");
+var leaderboardElement = document.getElementById("leaderboard");
 
-const player = { x: 480, y: 522, w: 22, h: 30, vx: 0, vy: 0, grounded: true, coyote: 0, spawnX: 480, spawnY: 522 };
-const platforms = [
+var W = 960;
+var H = 600;
+var world = { width: 960, height: 5000 };
+var keys = {};
+var state = "ready";
+var cameraY = 0;
+var cameraTargetY = 0;
+var best = Number(localStorage.getItem("skybound-best") || 0);
+var runStartedAt = 0;
+var clearRecorded = false;
+var attempts = JSON.parse(localStorage.getItem("skybound-attempts") || localStorage.getItem("skybound-leaderboard") || "[]");
+var leaderboard = attempts.filter((entry) => entry.result !== "failed");
+var leaderboardApiUrl = (window.SKYBOUND_LEADERBOARD_API || "").replace(/\/$/, "");
+var sharedLeaderboard = Boolean(leaderboardApiUrl) || window.location.protocol === "http:" || window.location.protocol === "https:";
+var leaderboardEndpoint = `${leaderboardApiUrl}/api/leaderboard`;
+
+var player = { x: 480, y: 522, w: 22, h: 30, vx: 0, vy: 0, grounded: true, coyote: 0, spawnX: 480, spawnY: 522 };
+var platforms = [
   { x: 380, y: 552, w: 200, h: 18 }, { x: 160, y: 465, w: 155, h: 16 }, { x: 570, y: 385, w: 170, h: 16 },
   { x: 355, y: 300, w: 135, h: 16 }, { x: 115, y: 218, w: 170, h: 16 }, { x: 450, y: 135, w: 155, h: 16 },
   { x: 700, y: 52, w: 150, h: 16 }, { x: 500, y: -45, w: 120, h: 16 }, { x: 270, y: -140, w: 160, h: 16 },
+
+  
   { x: 40, y: -235, w: 150, h: 16 }, { x: 300, y: -330, w: 170, h: 16 }, { x: 610, y: -430, w: 185, h: 16 },
   { x: 400, y: -535, w: 150, h: 16 }, { x: 130, y: -645, w: 175, h: 16 }, { x: 430, y: -760, w: 175, h: 16 },
   { x: 720, y: -875, w: 170, h: 16 }, { x: 535, y: -990, w: 135, h: 16 }, { x: 250, y: -1100, w: 180, h: 16 },
   { x: 80, y: -1210, w: 135, h: 16 }, { x: 335, y: -1325, w: 180, h: 16 }, { x: 630, y: -1440, w: 190, h: 16 },
   { x: 460, y: -1560, w: 140, h: 16 }, { x: 205, y: -1680, w: 155, h: 16 }, { x: 500, y: -1800, w: 200, h: 16 }
 ];
-const obstacles = [
+var barrierX = 380;
+var barrierY = -1240;
+var barrierWidth = 140;
+var barrierHeight = 120;
+var barrierGapWidth = 50;
+var barrierSectionWidth = (barrierWidth - barrierGapWidth) / 2;
+
+var obstacles = [
   { x: 175, y: 450, w: 54, h: 16, type: "spikes" },
-  { x: 386, y: 284, w: 46, h: 16, type: "spikes" },
-  { x: 195, y: 202, w: 64, h: 16, type: "spikes" },
   { x: 520, y: 119, w: 46, h: 16, type: "spikes" },
   { x: 735, y: 36, w: 58, h: 16, type: "spikes" },
-  { x: 370, y: 335, w: 150, h: 12, type: "barrier" },
-  { x: 190, y: -185, w: 150, h: 12, type: "barrier" },
-  { x: 470, y: -485, w: 130, h: 12, type: "barrier" },
-  // { x: 380, y: -1240, w: 140, h: 12, type: "barrier" }
+  { x: 720, y: -890, w: 35, h: 16, type: "spikes" },
+  { x: 850, y: -890, w: 35, h: 16, type: "spikes" },
+  { x: 325, y: -1115, w: 35, h: 16, type: "spikes" },
+
+  { x: 420, y: -785, w: 25, h: 75, type: "barrier" },
+  { x: 725, y: -1480, w: 20, h: 20, type: "barrier" },
+  { x: 460, y: -1700, w: 20, h: 20, type: "barrier" },
+  { x: 350, y: -1775, w: 20, h: 20, type: "barrier" },
 ];
+
+if (hotReloadState) {
+  Object.assign(player, hotReloadState.player);
+  state = hotReloadState.state;
+  cameraY = hotReloadState.cameraY;
+  cameraTargetY = hotReloadState.cameraTargetY;
+  best = hotReloadState.best;
+  runStartedAt = hotReloadState.runStartedAt;
+  clearRecorded = hotReloadState.clearRecorded;
+}
+
+window.skyboundHotReload = function () {
+  window.skyboundState = {
+    player: { ...player }, state, cameraY, cameraTargetY, best
+    , runStartedAt, clearRecorded
+  };
+  hotReloadController.abort();
+  cancelAnimationFrame(animationFrameId);
+};
 
 bestValue.textContent = String(best).padStart(4, "0");
 
+function renderLeaderboard() {
+  leaderboardElement.replaceChildren();
+  leaderboard.slice(0, 10).forEach((entry, index) => {
+    var row = document.createElement("li");
+    row.innerHTML = `<span class="leaderboard-rank">${String(index + 1).padStart(2, "0")}</span><span class="leaderboard-name"></span><strong>${formatTime(entry.time)}</strong>`;
+    row.querySelector(".leaderboard-name").textContent = entry.name;
+    leaderboardElement.appendChild(row);
+  });
+  if (!leaderboard.length) {
+    var emptyRow = document.createElement("li");
+    emptyRow.className = "leaderboard-empty";
+    emptyRow.textContent = "No clears yet";
+    leaderboardElement.appendChild(emptyRow);
+  }
+}
+
+async function loadLeaderboard() {
+  if (!sharedLeaderboard) return;
+  try {
+    var response = await fetch(leaderboardEndpoint);
+    if (!response.ok) return;
+    leaderboard = await response.json();
+    renderLeaderboard();
+  } catch {
+    // Keep the local leaderboard if the shared server is unavailable.
+  }
+}
+
+function formatTime(milliseconds) {
+  var seconds = milliseconds / 1000;
+  return `${seconds.toFixed(2)}s`;
+}
+
+function normalizePlayerName() {
+  return (startNameInput.value.trim() || playerNameInput.value.trim()).toUpperCase().slice(0, 12);
+}
+
+function beginRun() {
+  var name = normalizePlayerName();
+  if (!name) {
+    centerSubtitle.textContent = "Enter your name before the climb.";
+    startNameInput.focus();
+    return;
+  }
+  startNameInput.value = name;
+  playerNameInput.value = name;
+  reset();
+}
+
+function recordAttempt(result) {
+  if (clearRecorded || !runStartedAt) return;
+  clearRecorded = true;
+  var name = normalizePlayerName() || "YOU";
+  playerNameInput.value = name;
+  var attempt = { name, time: Math.round(performance.now() - runStartedAt), result };
+  attempts.push(attempt);
+  localStorage.setItem("skybound-attempts", JSON.stringify(attempts));
+  if (result === "clear") {
+    leaderboard.push(attempt);
+    leaderboard.sort((first, second) => first.time - second.time);
+    leaderboard = leaderboard.slice(0, 10);
+  }
+  renderLeaderboard();
+  if (sharedLeaderboard) {
+    fetch(leaderboardEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(attempt)
+    }).then((response) => response.ok ? response.json() : null)
+      .then((entries) => { if (entries) { leaderboard = entries; renderLeaderboard(); } })
+      .catch(() => {});
+  }
+}
+
+renderLeaderboard();
+loadLeaderboard();
+
 function reset() {
+  player.spawnX = safeCheckpointX(platforms[0]);
+  player.spawnY = platforms[0].y - player.h;
   player.x = player.spawnX; player.y = player.spawnY; player.vx = 0; player.vy = 0; player.grounded = true;
   cameraY = 0; cameraTargetY = 0; state = "playing"; centerMessage.classList.add("hidden"); completeMessage.classList.add("hidden");
+  runStartedAt = performance.now();
+  clearRecorded = false;
   centerTitle.textContent = "Keep going up.";
   centerSubtitle.textContent = "Every landing is a new beginning.";
 }
 
 function failRun() {
+  recordAttempt("failed");
+  player.spawnX = safeCheckpointX(platforms[0]);
+  player.spawnY = platforms[0].y - player.h;
+  heightValue.textContent = "0000";
   state = "dead";
   player.x = player.spawnX; player.y = player.spawnY; player.vx = 0; player.vy = 0; player.grounded = true;
   centerTitle.textContent = "The climb stops here.";
@@ -58,7 +188,7 @@ function failRun() {
 }
 
 function jump() {
-  if (state === "ready" || state === "dead" || state === "complete") { reset(); return; }
+  if (state === "ready" || state === "dead" || state === "complete") { beginRun(); return; }
   if (player.grounded || player.coyote > 0) { player.vy = -13.5; player.grounded = false; player.coyote = 0; }
 }
 
@@ -111,7 +241,12 @@ function update() {
   heightValue.textContent = String(altitude).padStart(4, "0");
   if (altitude > best) { best = altitude; bestValue.textContent = String(best).padStart(4, "0"); localStorage.setItem("skybound-best", best); }
   if (player.y > cameraY + H + 90) failRun();
-  if (player.y < -1870) { state = "complete"; completeMessage.classList.remove("hidden"); completeCopy.textContent = `You climbed ${String(altitude).padStart(4, "0")} metres above the ordinary.`; }
+  if (player.y < -1870) {
+    recordAttempt("clear");
+    state = "complete";
+    completeMessage.classList.remove("hidden");
+    completeCopy.textContent = `You cleared the climb in ${formatTime(performance.now() - runStartedAt)}.`;
+  }
 }
 
 function drawBackground() {
@@ -161,17 +296,20 @@ function draw() {
   ctx.restore();
 }
 
-function loop() { update(); draw(); requestAnimationFrame(loop); }
+function loop() { update(); draw(); animationFrameId = requestAnimationFrame(loop); }
 
 window.addEventListener("keydown", (event) => {
   keys[event.key] = true;
   if ([" ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) event.preventDefault();
-  if (event.key.toLowerCase() === "r" && !event.repeat) { event.preventDefault(); reset(); return; }
+  if (event.key.toLowerCase() === "r" && !event.repeat) { event.preventDefault(); beginRun(); return; }
   if ((event.key === " " || event.key === "w" || event.key === "W" || event.key === "ArrowUp") && !event.repeat) jump();
   if (event.key === "Escape") { state = state === "playing" ? "paused" : state === "paused" ? "playing" : state; }
-});
-window.addEventListener("keyup", (event) => { keys[event.key] = false; });
-document.getElementById("startButton").addEventListener("click", reset);
-document.getElementById("againButton").addEventListener("click", reset);
-document.getElementById("resetButton").addEventListener("click", reset);
+}, { signal: hotReloadController.signal });
+window.addEventListener("keyup", (event) => { keys[event.key] = false; }, { signal: hotReloadController.signal });
+document.getElementById("startButton").addEventListener("click", beginRun, { signal: hotReloadController.signal });
+document.getElementById("againButton").addEventListener("click", beginRun, { signal: hotReloadController.signal });
+document.getElementById("resetButton").addEventListener("click", beginRun, { signal: hotReloadController.signal });
+startNameInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") beginRun();
+}, { signal: hotReloadController.signal });
 loop();

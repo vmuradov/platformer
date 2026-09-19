@@ -28,6 +28,7 @@
           <span class="eyebrow">THE CLOUDLINE // 01</span>
           <h1>Keep going up.</h1>
           <p>Every landing is a new beginning.</p>
+          <input id="startName" class="start-name" maxlength="12" placeholder="ENTER NAME" autocomplete="off" />
           <button class="start-button" id="startButton" type="button">ENTER THE CLIMB <span>↗</span></button>
         </div>
         <div class="complete-message hidden" id="completeMessage">
@@ -48,11 +49,32 @@
           <span class="panel-kicker">FIELD NOTE 01</span>
           <p>Momentum is everything. Landings charge your next leap. The higher you climb, the less room you get.</p>
         </div>
+        <div class="panel-section leaderboard-section">
+          <div class="leaderboard-heading"><span class="panel-kicker">CLEAR SPEED</span><span class="leaderboard-count">TOP 10</span></div>
+          <label class="player-name-label" for="playerName">PLAYER</label>
+          <input id="playerName" class="player-name" maxlength="12" placeholder="NOT SET" autocomplete="off" />
+          <ol id="leaderboard" class="leaderboard" aria-live="polite"></ol>
+        </div>
         <div class="panel-footer">ESC <span>pause</span><span class="footer-divider"></span> SPACE <span>continue</span></div>
       </aside>
     </section>
     <footer class="bottomline"><span>AN ORIGINAL VERTICAL PLATFORMER</span><span>BUILD 0.1.0</span></footer>
   </main>
-  <script src="game.js"></script>
+  <script id="gameScript" src="game.js"></script>
+  <script>
+    window.addEventListener("skybound-style-change", () => {
+      const stylesheet = document.querySelector('link[href^="styles.css"]');
+      if (stylesheet) stylesheet.href = `styles.css?t=${Date.now()}`;
+    });
+
+    window.addEventListener("skybound-game-change", () => {
+      const oldScript = document.getElementById("gameScript");
+      const newScript = document.createElement("script");
+      newScript.id = "gameScript";
+      newScript.src = `game.js?t=${Date.now()}`;
+      oldScript?.remove();
+      document.body.appendChild(newScript);
+    });
+  </script>
 </body>
 </html>
