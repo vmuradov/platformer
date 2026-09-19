@@ -27,7 +27,7 @@ var best = Number(localStorage.getItem("skybound-best") || 0);
 var runStartedAt = 0;
 var clearRecorded = false;
 var attempts = JSON.parse(localStorage.getItem("skybound-attempts") || localStorage.getItem("skybound-leaderboard") || "[]");
-var leaderboard = attempts.slice();
+var leaderboard = attempts.filter((entry) => entry.result === "clear");
 var leaderboardApiUrl = (window.SKYBOUND_LEADERBOARD_API || "").replace(/\/$/, "");
 var supabaseUrl = (window.SKYBOUND_SUPABASE_URL || "").replace(/\/$/, "");
 var supabaseAnonKey = window.SKYBOUND_SUPABASE_ANON_KEY || "";
@@ -60,17 +60,17 @@ var barrierGapWidth = 50;
 var barrierSectionWidth = (barrierWidth - barrierGapWidth) / 2;
 
 var obstacles = [
-  { x: 175, y: 450, w: 54, h: 16, type: "spikes" },
-  { x: 520, y: 119, w: 46, h: 16, type: "spikes" },
-  { x: 735, y: 36, w: 58, h: 16, type: "spikes" },
-  { x: 720, y: -890, w: 35, h: 16, type: "spikes" },
-  { x: 850, y: -890, w: 35, h: 16, type: "spikes" },
-  { x: 325, y: -1115, w: 35, h: 16, type: "spikes" },
+  // { x: 175, y: 450, w: 54, h: 16, type: "spikes" },
+  // { x: 520, y: 119, w: 46, h: 16, type: "spikes" },
+  // { x: 735, y: 36, w: 58, h: 16, type: "spikes" },
+  // { x: 720, y: -890, w: 35, h: 16, type: "spikes" },
+  // { x: 850, y: -890, w: 35, h: 16, type: "spikes" },
+  // { x: 325, y: -1115, w: 35, h: 16, type: "spikes" },
 
-  { x: 420, y: -785, w: 25, h: 75, type: "barrier" },
-  { x: 725, y: -1480, w: 20, h: 20, type: "barrier" },
-  { x: 460, y: -1700, w: 20, h: 20, type: "barrier" },
-  { x: 350, y: -1775, w: 20, h: 20, type: "barrier" },
+  // { x: 420, y: -785, w: 25, h: 75, type: "barrier" },
+  // { x: 725, y: -1480, w: 20, h: 20, type: "barrier" },
+  // { x: 460, y: -1700, w: 20, h: 20, type: "barrier" },
+  // { x: 350, y: -1775, w: 20, h: 20, type: "barrier" },
 ];
 
 if (hotReloadState) {
@@ -114,7 +114,7 @@ function renderLeaderboard() {
 async function loadLeaderboard() {
   try {
     var requestUrl = supabaseEnabled
-      ? `${supabaseEndpoint}?select=name,time,result&order=time.asc&limit=10`
+      ? `${supabaseEndpoint}?select=name,time,result&result=eq.clear&order=time.asc&limit=10`
       : sharedLeaderboard ? leaderboardEndpoint : "leaderboard.json";
     var requestOptions = supabaseEnabled
       ? { headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}` }, cache: "no-store" }
@@ -122,9 +122,13 @@ async function loadLeaderboard() {
     var response = await fetch(requestUrl, requestOptions);
     if (!response.ok) return;
     var remoteEntries = await response.json();
-    leaderboard = [...leaderboard, ...remoteEntries]
+    var normalizedRemoteEntries = remoteEntries
+      .filter((entry) => entry.result === "clear")
       .sort((first, second) => first.time - second.time)
       .slice(0, 10);
+    leaderboard = sharedLeaderboard
+      ? normalizedRemoteEntries
+      : [...leaderboard, ...normalizedRemoteEntries].sort((first, second) => first.time - second.time).slice(0, 10);
     renderLeaderboard();
   } catch {
     // GitHub Pages may not expose the optional seed file in local file mode.
@@ -159,9 +163,11 @@ function recordAttempt(result) {
   var attempt = { name, time: Math.round(performance.now() - runStartedAt), result };
   attempts.push(attempt);
   localStorage.setItem("skybound-attempts", JSON.stringify(attempts));
-  leaderboard.push(attempt);
-  leaderboard.sort((first, second) => first.time - second.time);
-  leaderboard = leaderboard.slice(0, 10);
+  if (result === "clear") {
+    leaderboard.push(attempt);
+    leaderboard.sort((first, second) => first.time - second.time);
+    leaderboard = leaderboard.slice(0, 10);
+  }
   renderLeaderboard();
   var requestUrl = supabaseEnabled ? supabaseEndpoint : leaderboardEndpoint;
   var requestOptions = {
@@ -173,7 +179,15 @@ function recordAttempt(result) {
   };
   if (sharedLeaderboard) {
     fetch(requestUrl, requestOptions).then((response) => response.ok ? response.json() : null)
-      .then((entries) => { if (entries) { leaderboard = entries; renderLeaderboard(); } })
+      .then((entries) => {
+        if (!entries) return;
+        if (supabaseEnabled) {
+          loadLeaderboard();
+          return;
+        }
+        leaderboard = entries.filter((entry) => entry.result === "clear");
+        renderLeaderboard();
+      })
       .catch(() => {});
   }
 }
