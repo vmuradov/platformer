@@ -60,17 +60,17 @@ var barrierGapWidth = 50;
 var barrierSectionWidth = (barrierWidth - barrierGapWidth) / 2;
 
 var obstacles = [
-  // { x: 175, y: 450, w: 54, h: 16, type: "spikes" },
-  // { x: 520, y: 119, w: 46, h: 16, type: "spikes" },
-  // { x: 735, y: 36, w: 58, h: 16, type: "spikes" },
-  // { x: 720, y: -890, w: 35, h: 16, type: "spikes" },
-  // { x: 850, y: -890, w: 35, h: 16, type: "spikes" },
-  // { x: 325, y: -1115, w: 35, h: 16, type: "spikes" },
+  { x: 175, y: 450, w: 54, h: 16, type: "spikes" },
+  { x: 520, y: 119, w: 46, h: 16, type: "spikes" },
+  { x: 735, y: 36, w: 58, h: 16, type: "spikes" },
+  { x: 720, y: -890, w: 35, h: 16, type: "spikes" },
+  { x: 850, y: -890, w: 35, h: 16, type: "spikes" },
+  { x: 325, y: -1115, w: 35, h: 16, type: "spikes" },
 
-  // { x: 420, y: -785, w: 25, h: 75, type: "barrier" },
-  // { x: 725, y: -1480, w: 20, h: 20, type: "barrier" },
-  // { x: 460, y: -1700, w: 20, h: 20, type: "barrier" },
-  // { x: 350, y: -1775, w: 20, h: 20, type: "barrier" },
+  { x: 420, y: -785, w: 25, h: 75, type: "barrier" },
+  { x: 725, y: -1480, w: 20, h: 20, type: "barrier" },
+  { x: 460, y: -1700, w: 20, h: 20, type: "barrier" },
+  { x: 350, y: -1775, w: 20, h: 20, type: "barrier" },
 ];
 
 if (hotReloadState) {
