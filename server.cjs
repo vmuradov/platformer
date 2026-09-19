@@ -25,9 +25,8 @@ function writeLeaderboard(entries) {
   fs.writeFileSync(leaderboardPath, `${JSON.stringify(entries, null, 2)}\n`);
 }
 
-function getTopClears(entries) {
+function getTopEntries(entries) {
   return entries
-    .filter((entry) => entry.result !== "failed")
     .sort((first, second) => first.time - second.time)
     .slice(0, 10);
 }
@@ -66,7 +65,7 @@ const server = http.createServer((request, response) => {
   }
 
   if (request.url === "/api/leaderboard" && request.method === "GET") {
-    sendJson(response, 200, getTopClears(readLeaderboard()));
+    sendJson(response, 200, getTopEntries(readLeaderboard()));
     return;
   }
 
@@ -85,7 +84,7 @@ const server = http.createServer((request, response) => {
         }
         const entries = [...readLeaderboard(), { name, time, result, createdAt: new Date().toISOString() }].slice(-1000);
         writeLeaderboard(entries);
-        sendJson(response, 201, getTopClears(entries));
+        sendJson(response, 201, getTopEntries(entries));
       } catch {
         sendJson(response, 400, { error: "Invalid JSON" });
       }
