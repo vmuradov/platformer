@@ -97,7 +97,7 @@ startNameInput.value = savedPlayerName;
 
 function renderLeaderboard() {
   leaderboardElement.replaceChildren();
-  leaderboard.slice(0, 10).forEach((entry, index) => {
+  leaderboard.filter((entry) => entry.result === "clear").slice(0, 10).forEach((entry, index) => {
     var row = document.createElement("li");
     row.innerHTML = `<span class="leaderboard-rank">${String(index + 1).padStart(2, "0")}</span><span class="leaderboard-name"></span><strong>${formatTime(entry.time)}</strong>`;
     row.querySelector(".leaderboard-name").textContent = entry.name;
@@ -106,7 +106,7 @@ function renderLeaderboard() {
   if (!leaderboard.length) {
     var emptyRow = document.createElement("li");
     emptyRow.className = "leaderboard-empty";
-    emptyRow.textContent = "No runs yet";
+    emptyRow.textContent = "No cleared runs yet";
     leaderboardElement.appendChild(emptyRow);
   }
 }
