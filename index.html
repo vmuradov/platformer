@@ -22,6 +22,7 @@
         <canvas id="game" width="960" height="600" aria-label="Skybound platforming game"></canvas>
         <div class="hud">
           <div class="height-readout"><span class="hud-label">ALTITUDE</span><strong id="heightValue">0000</strong><span class="unit">m</span></div>
+          <div class="timer-readout"><span class="hud-label">TIME</span><strong id="timerValue">00.00s</strong></div>
           <div class="best-readout"><span class="hud-label">BEST</span><strong id="bestValue">0000</strong><span class="unit">m</span></div>
         </div>
         <div class="center-message" id="centerMessage">
@@ -51,8 +52,6 @@
         </div>
         <div class="panel-section leaderboard-section">
           <div class="leaderboard-heading"><span class="panel-kicker">CLEAR SPEED</span><span class="leaderboard-count">TOP 10</span></div>
-          <label class="player-name-label" for="playerName">PLAYER</label>
-          <input id="playerName" class="player-name" maxlength="12" placeholder="NOT SET" autocomplete="off" />
           <ol id="leaderboard" class="leaderboard" aria-live="polite"></ol>
         </div>
         <div class="panel-footer">ESC <span>pause</span><span class="footer-divider"></span> SPACE <span>continue</span></div>

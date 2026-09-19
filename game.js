@@ -7,12 +7,12 @@ var canvas = document.getElementById("game");
 var ctx = canvas.getContext("2d");
 var heightValue = document.getElementById("heightValue");
 var bestValue = document.getElementById("bestValue");
+var timerValue = document.getElementById("timerValue");
 var centerMessage = document.getElementById("centerMessage");
 var centerTitle = centerMessage.querySelector("h1");
 var centerSubtitle = centerMessage.querySelector("p");
 var completeMessage = document.getElementById("completeMessage");
 var completeCopy = document.getElementById("completeCopy");
-var playerNameInput = document.getElementById("playerName");
 var startNameInput = document.getElementById("startName");
 var leaderboardElement = document.getElementById("leaderboard");
 
@@ -29,8 +29,11 @@ var clearRecorded = false;
 var attempts = JSON.parse(localStorage.getItem("skybound-attempts") || localStorage.getItem("skybound-leaderboard") || "[]");
 var leaderboard = attempts.filter((entry) => entry.result !== "failed");
 var leaderboardApiUrl = (window.SKYBOUND_LEADERBOARD_API || "").replace(/\/$/, "");
-var sharedLeaderboard = Boolean(leaderboardApiUrl) || window.location.protocol === "http:" || window.location.protocol === "https:";
+var localServer = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+var sharedLeaderboard = Boolean(leaderboardApiUrl) || localServer;
 var leaderboardEndpoint = `${leaderboardApiUrl}/api/leaderboard`;
+if (localServer && !leaderboardApiUrl) leaderboardEndpoint = "/api/leaderboard";
+var savedPlayerName = localStorage.getItem("skybound-player-name") || "";
 
 var player = { x: 480, y: 522, w: 22, h: 30, vx: 0, vy: 0, grounded: true, coyote: 0, spawnX: 480, spawnY: 522 };
 var platforms = [
@@ -53,17 +56,17 @@ var barrierGapWidth = 50;
 var barrierSectionWidth = (barrierWidth - barrierGapWidth) / 2;
 
 var obstacles = [
-  { x: 175, y: 450, w: 54, h: 16, type: "spikes" },
-  { x: 520, y: 119, w: 46, h: 16, type: "spikes" },
-  { x: 735, y: 36, w: 58, h: 16, type: "spikes" },
-  { x: 720, y: -890, w: 35, h: 16, type: "spikes" },
-  { x: 850, y: -890, w: 35, h: 16, type: "spikes" },
-  { x: 325, y: -1115, w: 35, h: 16, type: "spikes" },
+  // { x: 175, y: 450, w: 54, h: 16, type: "spikes" },
+  // { x: 520, y: 119, w: 46, h: 16, type: "spikes" },
+  // { x: 735, y: 36, w: 58, h: 16, type: "spikes" },
+  // { x: 720, y: -890, w: 35, h: 16, type: "spikes" },
+  // { x: 850, y: -890, w: 35, h: 16, type: "spikes" },
+  // { x: 325, y: -1115, w: 35, h: 16, type: "spikes" },
 
-  { x: 420, y: -785, w: 25, h: 75, type: "barrier" },
-  { x: 725, y: -1480, w: 20, h: 20, type: "barrier" },
-  { x: 460, y: -1700, w: 20, h: 20, type: "barrier" },
-  { x: 350, y: -1775, w: 20, h: 20, type: "barrier" },
+  // { x: 420, y: -785, w: 25, h: 75, type: "barrier" },
+  // { x: 725, y: -1480, w: 20, h: 20, type: "barrier" },
+  // { x: 460, y: -1700, w: 20, h: 20, type: "barrier" },
+  // { x: 350, y: -1775, w: 20, h: 20, type: "barrier" },
 ];
 
 if (hotReloadState) {
@@ -86,6 +89,7 @@ window.skyboundHotReload = function () {
 };
 
 bestValue.textContent = String(best).padStart(4, "0");
+startNameInput.value = savedPlayerName;
 
 function renderLeaderboard() {
   leaderboardElement.replaceChildren();
@@ -104,14 +108,18 @@ function renderLeaderboard() {
 }
 
 async function loadLeaderboard() {
-  if (!sharedLeaderboard) return;
   try {
-    var response = await fetch(leaderboardEndpoint);
+    var response = await fetch(sharedLeaderboard ? leaderboardEndpoint : "leaderboard.json", { cache: "no-store" });
     if (!response.ok) return;
-    leaderboard = await response.json();
+    var remoteEntries = await response.json();
+    leaderboard = [...leaderboard, ...remoteEntries]
+      .filter((entry) => entry.result !== "failed")
+      .sort((first, second) => first.time - second.time)
+      .filter((entry, index, entries) => entries.findIndex((candidate) => candidate.name === entry.name && candidate.time === entry.time) === index)
+      .slice(0, 10);
     renderLeaderboard();
   } catch {
-    // Keep the local leaderboard if the shared server is unavailable.
+    // GitHub Pages may not expose the optional seed file in local file mode.
   }
 }
 
@@ -121,7 +129,7 @@ function formatTime(milliseconds) {
 }
 
 function normalizePlayerName() {
-  return (startNameInput.value.trim() || playerNameInput.value.trim()).toUpperCase().slice(0, 12);
+  return startNameInput.value.trim().toUpperCase().slice(0, 12);
 }
 
 function beginRun() {
@@ -132,7 +140,7 @@ function beginRun() {
     return;
   }
   startNameInput.value = name;
-  playerNameInput.value = name;
+  localStorage.setItem("skybound-player-name", name);
   reset();
 }
 
@@ -140,7 +148,6 @@ function recordAttempt(result) {
   if (clearRecorded || !runStartedAt) return;
   clearRecorded = true;
   var name = normalizePlayerName() || "YOU";
-  playerNameInput.value = name;
   var attempt = { name, time: Math.round(performance.now() - runStartedAt), result };
   attempts.push(attempt);
   localStorage.setItem("skybound-attempts", JSON.stringify(attempts));
@@ -170,6 +177,7 @@ function reset() {
   player.x = player.spawnX; player.y = player.spawnY; player.vx = 0; player.vy = 0; player.grounded = true;
   cameraY = 0; cameraTargetY = 0; state = "playing"; centerMessage.classList.add("hidden"); completeMessage.classList.add("hidden");
   runStartedAt = performance.now();
+  timerValue.textContent = "00.00s";
   clearRecorded = false;
   centerTitle.textContent = "Keep going up.";
   centerSubtitle.textContent = "Every landing is a new beginning.";
@@ -239,6 +247,7 @@ function update() {
   cameraY += (cameraTargetY - cameraY) * 0.12;
   const altitude = Math.max(0, Math.floor((510 - player.y) / 10));
   heightValue.textContent = String(altitude).padStart(4, "0");
+  timerValue.textContent = formatTime(performance.now() - runStartedAt);
   if (altitude > best) { best = altitude; bestValue.textContent = String(best).padStart(4, "0"); localStorage.setItem("skybound-best", best); }
   if (player.y > cameraY + H + 90) failRun();
   if (player.y < -1870) {
@@ -311,5 +320,8 @@ document.getElementById("againButton").addEventListener("click", beginRun, { sig
 document.getElementById("resetButton").addEventListener("click", beginRun, { signal: hotReloadController.signal });
 startNameInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") beginRun();
+}, { signal: hotReloadController.signal });
+startNameInput.addEventListener("input", () => {
+  startNameInput.value = startNameInput.value.toUpperCase().slice(0, 12);
 }, { signal: hotReloadController.signal });
 loop();

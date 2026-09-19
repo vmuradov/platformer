@@ -44,8 +44,10 @@ body::before {
 canvas { display: block; width: 100%; height: 100%; min-height: 560px; image-rendering: auto; }
 .hud { position: absolute; top: 24px; left: 25px; right: 25px; display: flex; justify-content: space-between; pointer-events: none; }
 .height-readout, .best-readout { display: flex; align-items: baseline; gap: 7px; color: var(--ink); }
+.timer-readout { display: flex; flex-direction: column; align-items: center; gap: 0; color: var(--ink); }
 .hud-label { color: rgba(24,34,37,.64); font-size: 9px; letter-spacing: .13em; }
 .hud strong { font-size: 25px; letter-spacing: .02em; }
+.timer-readout strong { font-size: 18px; }
 .unit { color: var(--orange-dark); font-size: 10px; }
 .best-readout { flex-direction: column; align-items: flex-end; gap: 0; }
 .best-readout strong { font-size: 18px; }
@@ -73,10 +75,7 @@ kbd { display: inline-grid; place-items: center; min-width: 27px; height: 27px; 
 .leaderboard-section { margin-top: 34px; }
 .leaderboard-heading { display: flex; align-items: baseline; justify-content: space-between; }
 .leaderboard-heading .panel-kicker { margin-bottom: 8px; }
-.leaderboard-count, .player-name-label { color: var(--muted); font: 9px "DM Mono", monospace; letter-spacing: .1em; }
-.player-name-label { display: block; margin: 0 0 5px; }
-.player-name { width: 100%; border: 0; border-bottom: 1px solid var(--line); padding: 5px 0; color: var(--ink); background: transparent; outline: 0; font: 11px "DM Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
-.player-name:focus { border-color: var(--orange); }
+.leaderboard-count { color: var(--muted); font: 9px "DM Mono", monospace; letter-spacing: .1em; }
 .leaderboard { display: grid; gap: 5px; margin: 12px 0 0; padding: 0; list-style: none; font: 10px "DM Mono", monospace; }
 .leaderboard li { display: grid; grid-template-columns: 21px 1fr auto; gap: 5px; align-items: center; min-width: 0; }
 .leaderboard-rank { color: var(--orange-dark); }
