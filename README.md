@@ -8,13 +8,15 @@ Open `index.html`, or serve the folder with any static web server.
 
 ## Shared leaderboard
 
-The leaderboard is stored in `leaderboard.json` and served by the included Node server. Run:
+The hosted game uses Supabase to save and load the shared leaderboard. The public Supabase URL and publishable key are configured in `index.html`; the publishable key is safe to expose in a browser app when the table has appropriate RLS policies.
+
+For local development, the included Node server also supports the leaderboard file. Run:
 
 ```text
 npm run web
 ```
 
-Then open `http://localhost:3000`. Everyone using the same hosted server sees the same top-ten clear times. The server must be deployed somewhere that supports a persistent filesystem, or `leaderboard.json` will reset when the service restarts. GitHub Pages alone cannot save leaderboard submissions because it only serves static files.
+Then open `http://localhost:3000`. Local scores are written to `leaderboard.json`; hosted scores are saved in Supabase.
 
 ## Publish the game on GitHub Pages
 
@@ -25,7 +27,7 @@ The repository includes a GitHub Actions workflow at `.github/workflows/deploy-p
 3. Open the **Actions** tab and wait for **Deploy Skybound to GitHub Pages** to finish.
 4. Open the Pages URL shown in the deployment summary.
 
-GitHub Pages will host the game itself. For a shared leaderboard, keep the Node server on a separate host and set `window.SKYBOUND_LEADERBOARD_API` in `index.html` to that server's URL; GitHub Pages cannot execute `server.cjs` or modify `leaderboard.json`.
+GitHub Pages hosts the game itself and cannot execute `server.cjs` or modify `leaderboard.json`. Supabase provides the persistent shared leaderboard for the Pages deployment.
 
 ## Desktop build
 

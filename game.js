@@ -29,8 +29,12 @@ var clearRecorded = false;
 var attempts = JSON.parse(localStorage.getItem("skybound-attempts") || localStorage.getItem("skybound-leaderboard") || "[]");
 var leaderboard = attempts.filter((entry) => entry.result !== "failed");
 var leaderboardApiUrl = (window.SKYBOUND_LEADERBOARD_API || "").replace(/\/$/, "");
+var supabaseUrl = (window.SKYBOUND_SUPABASE_URL || "").replace(/\/$/, "");
+var supabaseAnonKey = window.SKYBOUND_SUPABASE_ANON_KEY || "";
+var supabaseEnabled = Boolean(supabaseUrl && supabaseAnonKey);
+var supabaseEndpoint = `${supabaseUrl}/rest/v1/leaderboard`;
 var localServer = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-var sharedLeaderboard = Boolean(leaderboardApiUrl) || localServer;
+var sharedLeaderboard = supabaseEnabled || Boolean(leaderboardApiUrl) || localServer;
 var leaderboardEndpoint = `${leaderboardApiUrl}/api/leaderboard`;
 if (localServer && !leaderboardApiUrl) leaderboardEndpoint = "/api/leaderboard";
 var savedPlayerName = localStorage.getItem("skybound-player-name") || "";
@@ -109,7 +113,13 @@ function renderLeaderboard() {
 
 async function loadLeaderboard() {
   try {
-    var response = await fetch(sharedLeaderboard ? leaderboardEndpoint : "leaderboard.json", { cache: "no-store" });
+    var requestUrl = supabaseEnabled
+      ? `${supabaseEndpoint}?select=name,time,result&result=eq.clear&order=time.asc&limit=10`
+      : sharedLeaderboard ? leaderboardEndpoint : "leaderboard.json";
+    var requestOptions = supabaseEnabled
+      ? { headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}` }, cache: "no-store" }
+      : { cache: "no-store" };
+    var response = await fetch(requestUrl, requestOptions);
     if (!response.ok) return;
     var remoteEntries = await response.json();
     leaderboard = [...leaderboard, ...remoteEntries]
@@ -157,12 +167,16 @@ function recordAttempt(result) {
     leaderboard = leaderboard.slice(0, 10);
   }
   renderLeaderboard();
+  var requestUrl = supabaseEnabled ? supabaseEndpoint : leaderboardEndpoint;
+  var requestOptions = {
+    method: "POST",
+    headers: supabaseEnabled
+      ? { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}`, "Content-Type": "application/json", Prefer: "return=representation" }
+      : { "Content-Type": "application/json" },
+    body: JSON.stringify(attempt)
+  };
   if (sharedLeaderboard) {
-    fetch(leaderboardEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(attempt)
-    }).then((response) => response.ok ? response.json() : null)
+    fetch(requestUrl, requestOptions).then((response) => response.ok ? response.json() : null)
       .then((entries) => { if (entries) { leaderboard = entries; renderLeaderboard(); } })
       .catch(() => {});
   }
