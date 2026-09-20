@@ -38,6 +38,7 @@ var sharedLeaderboard = supabaseEnabled || Boolean(leaderboardApiUrl) || localSe
 var leaderboardEndpoint = `${leaderboardApiUrl}/api/leaderboard`;
 if (localServer && !leaderboardApiUrl) leaderboardEndpoint = "/api/leaderboard";
 var savedPlayerName = localStorage.getItem("skybound-player-name") || "";
+var physicsHz = 75;
 
 var player = { x: 480, y: 522, w: 22, h: 30, vx: 0, vy: 0, grounded: true, coyote: 0, spawnX: 480, spawnY: 522 };
 var platforms = [
@@ -237,20 +238,20 @@ function safeCheckpointX(platform) {
   return candidates.find((x) => !obstacles.some((obstacle) => overlapsObstacle(x, platform.y - player.h, obstacle))) ?? platform.x + 10;
 }
 
-function update() {
+function update(frameScale) {
   if (state !== "playing") return;
   const left = keys.a || keys.ArrowLeft;
   const right = keys.d || keys.ArrowRight;
   const brake = keys.s || keys.ArrowDown;
-  if (left) player.vx -= 0.55;
-  if (right) player.vx += 0.55;
-  player.vx *= brake ? 0.82 : 0.93;
+  if (left) player.vx -= 0.55 * frameScale;
+  if (right) player.vx += 0.55 * frameScale;
+  player.vx *= Math.pow(brake ? 0.82 : 0.93, frameScale);
   player.vx = Math.max(-7, Math.min(7, player.vx));
-  player.vy += 0.54;
+  player.vy += 0.54 * frameScale;
   player.vy = Math.min(player.vy, 16);
   const oldBottom = player.y + player.h;
-  player.x += player.vx;
-  player.y += player.vy;
+  player.x += player.vx * frameScale;
+  player.y += player.vy * frameScale;
   player.x = Math.max(8, Math.min(world.width - player.w - 8, player.x));
   player.grounded = false;
   for (const platform of platforms) {
@@ -266,7 +267,7 @@ function update() {
       return;
     }
   }
-  if (!player.grounded) player.coyote = Math.max(0, player.coyote - 1 / 60);
+  if (!player.grounded) player.coyote = Math.max(0, player.coyote - frameScale / physicsHz);
   cameraTargetY = Math.min(0, Math.max(-world.height + H, player.y - H * 0.42));
   cameraY += (cameraTargetY - cameraY) * 0.12;
   const altitude = Math.max(0, Math.floor((510 - player.y) / 10));
@@ -329,7 +330,14 @@ function draw() {
   ctx.restore();
 }
 
-function loop() { update(); draw(); animationFrameId = requestAnimationFrame(loop); }
+var lastFrameTime = performance.now();
+function loop(frameTime) {
+  const frameScale = Math.min(3, Math.max(0, (frameTime - lastFrameTime) / (1000 / physicsHz)));
+  lastFrameTime = frameTime;
+  update(frameScale);
+  draw();
+  animationFrameId = requestAnimationFrame(loop);
+}
 
 window.addEventListener("keydown", (event) => {
   keys[event.key] = true;
@@ -348,4 +356,4 @@ startNameInput.addEventListener("keydown", (event) => {
 startNameInput.addEventListener("input", () => {
   startNameInput.value = startNameInput.value.toUpperCase().slice(0, 12);
 }, { signal: hotReloadController.signal });
-loop();
+animationFrameId = requestAnimationFrame(loop);
