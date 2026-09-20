@@ -27,6 +27,8 @@ var best = Number(localStorage.getItem("skybound-best") || 0);
 var runStartedAt = 0;
 var clearRecorded = false;
 var attempts = JSON.parse(localStorage.getItem("skybound-attempts") || localStorage.getItem("skybound-leaderboard") || "[]");
+var pendingAttempts = JSON.parse(localStorage.getItem("skybound-pending-attempts") || "[]");
+var submissionInProgress = false;
 var leaderboard = attempts.filter((entry) => entry.result === "clear");
 var leaderboardApiUrl = (window.SKYBOUND_LEADERBOARD_API || "").replace(/\/$/, "");
 var supabaseUrl = (window.SKYBOUND_SUPABASE_URL || "").replace(/\/$/, "");
@@ -157,6 +159,39 @@ function beginRun() {
   reset();
 }
 
+async function flushPendingAttempts() {
+  if (!sharedLeaderboard || submissionInProgress || !pendingAttempts.length) return;
+  submissionInProgress = true;
+  try {
+    while (pendingAttempts.length) {
+      var attempt = pendingAttempts[0];
+      var requestUrl = supabaseEnabled ? supabaseEndpoint : leaderboardEndpoint;
+      var requestOptions = {
+        method: "POST",
+        headers: supabaseEnabled
+          ? { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}`, "Content-Type": "application/json", Prefer: "return=representation" }
+          : { "Content-Type": "application/json" },
+        body: JSON.stringify(attempt)
+      };
+      var response = await fetch(requestUrl, requestOptions);
+      if (!response.ok) throw new Error(`Leaderboard submission failed (${response.status})`);
+      var entries = await response.json();
+      pendingAttempts.shift();
+      localStorage.setItem("skybound-pending-attempts", JSON.stringify(pendingAttempts));
+      if (supabaseEnabled) {
+        loadLeaderboard();
+      } else {
+        leaderboard = entries.filter((entry) => entry.result === "clear");
+        renderLeaderboard();
+      }
+    }
+  } catch (error) {
+    console.warn("Leaderboard submission will be retried:", error);
+  } finally {
+    submissionInProgress = false;
+  }
+}
+
 function recordAttempt(result) {
   if (clearRecorded || !runStartedAt) return;
   clearRecorded = true;
@@ -164,37 +199,21 @@ function recordAttempt(result) {
   var attempt = { name, time: Math.round(performance.now() - runStartedAt), result };
   attempts.push(attempt);
   localStorage.setItem("skybound-attempts", JSON.stringify(attempts));
+  pendingAttempts.push(attempt);
+  localStorage.setItem("skybound-pending-attempts", JSON.stringify(pendingAttempts));
   if (result === "clear") {
     leaderboard.push(attempt);
     leaderboard.sort((first, second) => first.time - second.time);
     leaderboard = leaderboard.slice(0, 10);
   }
   renderLeaderboard();
-  var requestUrl = supabaseEnabled ? supabaseEndpoint : leaderboardEndpoint;
-  var requestOptions = {
-    method: "POST",
-    headers: supabaseEnabled
-      ? { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}`, "Content-Type": "application/json", Prefer: "return=representation" }
-      : { "Content-Type": "application/json" },
-    body: JSON.stringify(attempt)
-  };
-  if (sharedLeaderboard) {
-    fetch(requestUrl, requestOptions).then((response) => response.ok ? response.json() : null)
-      .then((entries) => {
-        if (!entries) return;
-        if (supabaseEnabled) {
-          loadLeaderboard();
-          return;
-        }
-        leaderboard = entries.filter((entry) => entry.result === "clear");
-        renderLeaderboard();
-      })
-      .catch(() => {});
-  }
+  flushPendingAttempts();
 }
 
 renderLeaderboard();
 loadLeaderboard();
+flushPendingAttempts();
+window.addEventListener("online", flushPendingAttempts, { signal: hotReloadController.signal });
 
 function reset() {
   player.spawnX = safeCheckpointX(platforms[0]);
