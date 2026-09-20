@@ -28,6 +28,8 @@ var runStartedAt = 0;
 var clearRecorded = false;
 var attempts = JSON.parse(localStorage.getItem("skybound-attempts") || localStorage.getItem("skybound-leaderboard") || "[]");
 var pendingAttempts = JSON.parse(localStorage.getItem("skybound-pending-attempts") || "[]");
+pendingAttempts = pendingAttempts.map((attempt) => ({ ...attempt, created_at: attempt.created_at || new Date().toISOString() }));
+localStorage.setItem("skybound-pending-attempts", JSON.stringify(pendingAttempts));
 var submissionInProgress = false;
 var submissionRetryTimer = 0;
 var leaderboard = attempts.filter((entry) => entry.result === "clear");
@@ -210,7 +212,7 @@ function recordAttempt(result) {
   if (clearRecorded || !runStartedAt) return;
   clearRecorded = true;
   var name = normalizePlayerName() || "YOU";
-  var attempt = { name, time: Math.round(performance.now() - runStartedAt), result };
+  var attempt = { name, time: Math.round(performance.now() - runStartedAt), result, created_at: new Date().toISOString() };
   attempts.push(attempt);
   localStorage.setItem("skybound-attempts", JSON.stringify(attempts));
   pendingAttempts.push(attempt);
