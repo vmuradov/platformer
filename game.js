@@ -169,12 +169,18 @@ async function flushPendingAttempts() {
     while (pendingAttempts.length) {
       var attempt = pendingAttempts[0];
       var requestUrl = supabaseEnabled ? supabaseEndpoint : leaderboardEndpoint;
+        var submission = {
+          name: attempt.name,
+          time: attempt.time,
+          result: attempt.result,
+          created_at: attempt.created_at || new Date().toISOString()
+        };
       var requestOptions = {
         method: "POST",
         headers: supabaseEnabled
           ? { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}`, "Content-Type": "application/json", Prefer: "return=representation" }
           : { "Content-Type": "application/json" },
-        body: JSON.stringify(attempt)
+        body: JSON.stringify(submission)
       };
       var response = await fetch(requestUrl, requestOptions);
       var responseText = await response.text();
