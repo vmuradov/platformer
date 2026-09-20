@@ -29,6 +29,7 @@ var clearRecorded = false;
 var attempts = JSON.parse(localStorage.getItem("skybound-attempts") || localStorage.getItem("skybound-leaderboard") || "[]");
 var pendingAttempts = JSON.parse(localStorage.getItem("skybound-pending-attempts") || "[]");
 var submissionInProgress = false;
+var submissionRetryTimer = 0;
 var leaderboard = attempts.filter((entry) => entry.result === "clear");
 var leaderboardApiUrl = (window.SKYBOUND_LEADERBOARD_API || "").replace(/\/$/, "");
 var supabaseUrl = (window.SKYBOUND_SUPABASE_URL || "").replace(/\/$/, "");
@@ -187,6 +188,8 @@ async function flushPendingAttempts() {
     }
   } catch (error) {
     console.warn("Leaderboard submission will be retried:", error);
+    clearTimeout(submissionRetryTimer);
+    submissionRetryTimer = setTimeout(flushPendingAttempts, 15000);
   } finally {
     submissionInProgress = false;
   }
@@ -214,6 +217,9 @@ renderLeaderboard();
 loadLeaderboard();
 flushPendingAttempts();
 window.addEventListener("online", flushPendingAttempts, { signal: hotReloadController.signal });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") flushPendingAttempts();
+}, { signal: hotReloadController.signal });
 
 function reset() {
   player.spawnX = safeCheckpointX(platforms[0]);
