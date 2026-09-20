@@ -175,8 +175,15 @@ async function flushPendingAttempts() {
         body: JSON.stringify(attempt)
       };
       var response = await fetch(requestUrl, requestOptions);
-      if (!response.ok) throw new Error(`Leaderboard submission failed (${response.status})`);
-      var entries = await response.json();
+      var responseText = await response.text();
+      var responseData = responseText ? JSON.parse(responseText) : null;
+      if (!response.ok) {
+        var serverMessage = responseData && (responseData.message || responseData.hint || responseData.details || responseData.error);
+        var submissionError = new Error(`Leaderboard submission failed (${response.status}): ${serverMessage || responseText || "No response body"}`);
+        submissionError.permanent = response.status >= 400 && response.status < 500;
+        throw submissionError;
+      }
+      var entries = responseData;
       pendingAttempts.shift();
       localStorage.setItem("skybound-pending-attempts", JSON.stringify(pendingAttempts));
       if (supabaseEnabled) {
@@ -187,9 +194,13 @@ async function flushPendingAttempts() {
       }
     }
   } catch (error) {
-    console.warn("Leaderboard submission will be retried:", error);
-    clearTimeout(submissionRetryTimer);
-    submissionRetryTimer = setTimeout(flushPendingAttempts, 15000);
+    if (error.permanent) {
+      console.error("Leaderboard submission was rejected by the server:", error);
+    } else {
+      console.warn("Leaderboard submission will be retried:", error);
+      clearTimeout(submissionRetryTimer);
+      submissionRetryTimer = setTimeout(flushPendingAttempts, 15000);
+    }
   } finally {
     submissionInProgress = false;
   }
