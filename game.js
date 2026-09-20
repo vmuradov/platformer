@@ -238,20 +238,20 @@ function safeCheckpointX(platform) {
   return candidates.find((x) => !obstacles.some((obstacle) => overlapsObstacle(x, platform.y - player.h, obstacle))) ?? platform.x + 10;
 }
 
-function update(frameScale) {
+function update() {
   if (state !== "playing") return;
   const left = keys.a || keys.ArrowLeft;
   const right = keys.d || keys.ArrowRight;
   const brake = keys.s || keys.ArrowDown;
-  if (left) player.vx -= 0.55 * frameScale;
-  if (right) player.vx += 0.55 * frameScale;
-  player.vx *= Math.pow(brake ? 0.82 : 0.93, frameScale);
+  if (left) player.vx -= 0.55;
+  if (right) player.vx += 0.55;
+  player.vx *= brake ? 0.82 : 0.93;
   player.vx = Math.max(-7, Math.min(7, player.vx));
-  player.vy += 0.54 * frameScale;
+  player.vy += 0.54;
   player.vy = Math.min(player.vy, 16);
   const oldBottom = player.y + player.h;
-  player.x += player.vx * frameScale;
-  player.y += player.vy * frameScale;
+  player.x += player.vx;
+  player.y += player.vy;
   player.x = Math.max(8, Math.min(world.width - player.w - 8, player.x));
   player.grounded = false;
   for (const platform of platforms) {
@@ -267,7 +267,7 @@ function update(frameScale) {
       return;
     }
   }
-  if (!player.grounded) player.coyote = Math.max(0, player.coyote - frameScale / physicsHz);
+  if (!player.grounded) player.coyote = Math.max(0, player.coyote - 1 / physicsHz);
   cameraTargetY = Math.min(0, Math.max(-world.height + H, player.y - H * 0.42));
   cameraY += (cameraTargetY - cameraY) * 0.12;
   const altitude = Math.max(0, Math.floor((510 - player.y) / 10));
@@ -330,11 +330,17 @@ function draw() {
   ctx.restore();
 }
 
+var fixedStepMs = 1000 / physicsHz;
 var lastFrameTime = performance.now();
+var physicsAccumulator = 0;
 function loop(frameTime) {
-  const frameScale = Math.min(3, Math.max(0, (frameTime - lastFrameTime) / (1000 / physicsHz)));
+  const elapsed = Math.min(250, Math.max(0, frameTime - lastFrameTime));
   lastFrameTime = frameTime;
-  update(frameScale);
+  physicsAccumulator += elapsed;
+  while (physicsAccumulator >= fixedStepMs) {
+    update();
+    physicsAccumulator -= fixedStepMs;
+  }
   draw();
   animationFrameId = requestAnimationFrame(loop);
 }
