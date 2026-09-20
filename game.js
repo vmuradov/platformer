@@ -15,6 +15,8 @@ var completeMessage = document.getElementById("completeMessage");
 var completeCopy = document.getElementById("completeCopy");
 var startNameInput = document.getElementById("startName");
 var leaderboardElement = document.getElementById("leaderboard");
+var flashPrompt = document.getElementById("flashPrompt");
+var flashInstallButton = document.getElementById("flashInstallButton");
 
 var W = 960;
 var H = 600;
@@ -400,6 +402,11 @@ window.addEventListener("keyup", (event) => { keys[event.key] = false; }, { sign
 document.getElementById("startButton").addEventListener("click", beginRun, { signal: hotReloadController.signal });
 document.getElementById("againButton").addEventListener("click", beginRun, { signal: hotReloadController.signal });
 document.getElementById("resetButton").addEventListener("click", beginRun, { signal: hotReloadController.signal });
+flashInstallButton.addEventListener("click", () => {
+  flashPrompt.classList.add("hidden");
+  centerMessage.classList.remove("hidden");
+  startNameInput.focus();
+}, { signal: hotReloadController.signal });
 startNameInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") beginRun();
 }, { signal: hotReloadController.signal });

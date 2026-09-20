@@ -25,11 +25,18 @@
           <div class="timer-readout"><span class="hud-label">TIME</span><strong id="timerValue">00.00s</strong></div>
           <div class="best-readout"><span class="hud-label">BEST</span><strong id="bestValue">0000</strong><span class="unit">m</span></div>
         </div>
-        <div class="center-message" id="centerMessage">
+        <div class="flash-prompt" id="flashPrompt" role="dialog" aria-modal="true" aria-labelledby="flashTitle">
+          <div class="adobe-mark" aria-hidden="true">A</div>
+          <span class="eyebrow">SYSTEM DOWNLOAD</span>
+          <h2 id="flashTitle">Download Adobe Flash Player</h2>
+          <p>Required to launch Skybound.</p>
+          <button class="start-button flash-install" id="flashInstallButton" type="button">INSTALL <span>↗</span></button>
+        </div>
+        <div class="center-message hidden" id="centerMessage">
           <span class="eyebrow">THE CLOUDLINE // 01</span>
           <h1>Keep going up.</h1>
           <p>Every landing is a new beginning.</p>
-          <input id="startName" class="start-name" maxlength="12" placeholder="ENTER NAME" autocomplete="off" />
+          <input id="startName" class="start-name" maxlength="12" placeholder="CHARACTER NAME" autocomplete="off" />
           <button class="start-button" id="startButton" type="button">ENTER THE CLIMB <span>↗</span></button>
         </div>
         <div class="complete-message hidden" id="completeMessage">

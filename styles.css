@@ -51,6 +51,11 @@ canvas { display: block; width: 100%; height: 100%; min-height: 560px; image-ren
 .unit { color: var(--orange-dark); font-size: 10px; }
 .best-readout { flex-direction: column; align-items: flex-end; gap: 0; }
 .best-readout strong { font-size: 18px; }
+.flash-prompt { position: absolute; top: 50%; left: 50%; z-index: 2; width: min(360px, calc(100% - 44px)); transform: translate(-50%, -50%); padding: 31px 28px 29px; color: var(--ink); background: rgba(230,238,232,.97); box-shadow: 10px 12px 0 rgba(24,34,37,.14); text-align: center; }
+.adobe-mark { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto 19px; color: #fff; background: #ed1c24; font: 700 31px Georgia, serif; line-height: 1; }
+.flash-prompt h2 { margin: 12px 0 8px; font-size: clamp(25px, 4vw, 34px); line-height: 1; letter-spacing: -.045em; }
+.flash-prompt p { margin: 0 0 24px; color: #50615d; font-size: 13px; }
+.flash-install { min-width: 137px; }
 .center-message, .complete-message { position: absolute; top: 50%; left: 50%; width: min(410px, calc(100% - 44px)); transform: translate(-50%, -43%); text-align: center; }
 .eyebrow { color: var(--orange-dark); font-size: 10px; letter-spacing: .18em; }
 h1, h2 { margin: 12px 0 8px; font-size: clamp(38px, 5vw, 64px); line-height: .98; letter-spacing: -.06em; }
